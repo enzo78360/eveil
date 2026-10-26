@@ -30,8 +30,13 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-xattr -cr "$APP"
-codesign --force --sign - "$APP"
+# macOS remet parfois des attributs étendus sur les fichiers de Documents : on réessaie.
+for try in 1 2 3; do
+  xattr -cr "$APP"
+  codesign --force --sign - "$APP" 2>/dev/null && break
+  [[ $try == 3 ]] && { echo "La signature a échoué" >&2; exit 1; }
+  sleep 1
+done
 echo "✓ $APP"
 
 if [[ "${1:-}" == "--install" ]]; then
